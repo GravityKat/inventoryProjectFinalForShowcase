@@ -1,0 +1,120 @@
+<section class="bg-gray-50 dark:bg-gray-900 min-h-screen py-12 px-6">
+     <div class="max-w-screen-lg mx-auto">
+
+          <div class="relative flex items-center justify-center mb-6">
+               <!-- Back to Centres Button (Absolute Left) -->
+               <div class="absolute left-0">
+                    <%= link_to "← Back to Centres", centres_path, 
+      class: "px-4 py-2 bg-blue-600 text-white font-medium rounded-lg shadow-md hover:bg-blue-700 
+      focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800 transition duration-300" %>
+               </div>
+
+               <!-- Page Title (Centered) -->
+               <h1 class="text-3xl font-bold text-gray-800 dark:text-white text-center"><%= @centre.name %> Inventory</h1>
+          </div>
+
+          <!-- Flash Messages -->
+          <% if flash[:notice] %>
+          <p class="text-green-600 bg-green-100 dark:bg-green-800 dark:text-green-300 p-3 rounded-lg mb-6 text-center"><%= flash[:notice] %></p>
+          <% elsif flash[:alert] %>
+          <p class="text-red-600 bg-red-100 dark:bg-red-800 dark:text-red-300 p-3 rounded-lg mb-6 text-center"><%= flash[:alert] %></p>
+          <% end %>
+
+          <!-- Add New Item Form -->
+          <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8">
+               <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Add a New Item</h2>
+               <%= form_with model: @centre.items.new, url: centre_items_path(@centre), local: true, class: "space-y-4" do |f| %>
+
+               <!-- Item Name -->
+               <div>
+                    <%= f.label :name, "Item Name", class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white" %>
+                    <%= f.text_field :name, required: true, class: "w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" %>
+               </div>
+
+               <!-- Stock Quantity -->
+               <div>
+                    <%= f.label :stock, "Stock Quantity", 
+                    class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white" %>
+                    <%= f.number_field :stock, min: 0, required: true, class: "w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" %>
+               </div>
+
+               <!-- Category -->
+               <div>
+                    <%= f.label :category_id, "Category", class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white" %>
+                    <%= f.collection_select :category_id, Category.all, :id, :name, { prompt: "Select a Category" }, 
+                    { required: true, class: "w-full p-2 border border-gray-300 rounded-md bg-gray-200 text-gray-900 
+                   focus:outline-none focus:ring-2 focus:ring-gray-400 
+                   dark:bg-gray-700 dark:border-gray-600 dark:text-white appearance-none" } %>
+               </div>
+
+               <%= f.submit "Add Item", class: "px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-4 focus:ring-green-300 dark:focus:ring-green-800" %>
+               <% end %>
+          </div>
+
+          <!-- Item List -->
+          <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
+               <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Item List</h2>
+
+               <% if @items.any? %>
+               <ul class="space-y-4">
+                    <% @items.each do |item| %>
+                    <% if item.name.present? && item.stock.present? %>
+                    <li id="item-<%= item.id %>" class="relative group flex justify-between items-center p-4 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition duration-300 ease-in-out">
+                         <span class="text-lg font-medium text-gray-900 dark:text-white">
+                              <%= item.name %> - <span class="text-gray-700 dark:text-gray-400">Stock: <%= item.stock%> Category: <%= item.category&.name %></span>
+                         </span>
+
+                         <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                              <!-- Edit Button -->
+                              <button data-modal-target="editModal-<%= item.id %>" data-modal-toggle="editModal-<%= item.id %>" class="px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition">
+                                   Edit
+                              </button>
+
+                              <!-- Delete Button -->
+                              <%= button_to "Delete", centre_item_path(@centre, item), method: :delete, data: { confirm: "Are you sure?" }, 
+                    class: "px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition" %>
+                         </div>
+
+                         <!-- Edit Modal -->
+                         <div id="editModal-<%= item.id %>" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-50">
+                              <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-96">
+                                   <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Edit Item</h2>
+
+                                   <%= form_with model: item, url: centre_item_path(@centre, item), method: :patch, local: true, class: "mt-4 space-y-4" do |f| %>
+                                   <div>
+                                        <%= f.label :name, "Item Name", class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white" %>
+                                        <%= f.text_field :name, required: true, class: "w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" %>
+                                   </div>
+
+                                   <div>
+                                        <%= f.label :stock, "Stock Quantity", class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white" %>
+                                        <%= f.number_field :stock, min: 0, required: true, class: "w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" %>
+                                   </div>
+
+                                   <div>
+                                        <%= f.label :category_id, "Category", class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white" %>
+                                        <%= f.collection_select :category_id, Category.all, :id, :name, { prompt: "Select a Category" }, { required: true, class: "w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" } %>
+                                   </div>
+
+                                   <div class="mt-4 flex gap-2">
+                                        <%= f.submit "Save Changes", class: "px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800" %>
+                                        <button type="button" data-modal-hide="editModal-<%= item.id %>" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-800">
+                                             Cancel
+                                        </button>
+                                   </div>
+                                   <% end %>
+                              </div>
+                         </div>
+                    </li>
+                    <% end %>
+                    <% end %>
+               </ul>
+               <% else %>
+               <!-- Message When No Items Exist -->
+               <p class="text-gray-700 dark:text-gray-400 text-center text-lg font-medium py-4">
+                    No items are currently in this inventory.
+               </p>
+               <% end %>
+          </div>
+     </div>
+</section>

@@ -1,0 +1,147 @@
+<section class="bg-gray-50 dark:bg-gray-900 min-h-screen py-12 px-6">
+     <div class="max-w-screen-lg mx-auto">
+          <h1 class="text-4xl font-bold text-gray-900 dark:text-white text-center mb-6">All Centres</h1>
+
+          <!-- Toggle Button -->
+          <button id="toggle-categories" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800">
+               Show Categories
+          </button>
+
+          <!-- Category Display Section (Initially Hidden) -->
+          <div id="category-section" class="hidden bg-gray-100 dark:bg-gray-700 p-3 rounded-lg shadow-sm mt-3">
+               <ul class="flex flex-wrap gap-2">
+                    <% Category.all.each do |category| %>
+                    <li class="px-3 py-1 bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white rounded-md text-sm">
+                         <%= category.name %>
+                    </li>
+                    <% end %>
+               </ul>
+          </div>
+          <!-- JavaScript for Toggle Functionality -->
+          <script>
+               function setupCategoryToggle() {
+                    const toggleButton = document.getElementById("toggle-categories");
+                    const categorySection = document.getElementById("category-section");
+
+                    if (toggleButton && !toggleButton.dataset.listenerAdded) {
+                         toggleButton.dataset.listenerAdded = "true"; // Prevent duplicate listeners
+
+                         toggleButton.addEventListener("click", function() {
+                              categorySection.classList.toggle("hidden");
+                              toggleButton.textContent = categorySection.classList.contains("hidden") ? "Show Categories" : "Hide Categories";
+                         });
+                    }
+               }
+
+               // Run on full page reload
+               document.addEventListener("DOMContentLoaded", setupCategoryToggle);
+
+               // Run on Turbo Drive navigation
+               document.addEventListener("turbo:load", setupCategoryToggle);
+          </script>
+
+          <!-- Search Form -->
+          <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8">
+               <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Search for an Item</h2>
+               <%= search_form_for @q, url: centres_path, method: :get, id: "search-form", class: "space-y-4" do |f| %>
+               <div>
+                    <%= f.label :name_or_category_name_cont, "Search:", class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white" %>
+                    <%= f.text_field :name_or_category_name_cont, value: params.dig(:q, :name_or_category_name_cont), autocomplete: "off", list: "suggestions", id: "search-input",
+               class: "w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" %>
+               </div>
+               <div class="flex space-x-4">
+                    <%= f.submit "Search", class: "px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-4 focus:ring-green-300 dark:focus:ring-green-800" %>
+                    <button type="button" id="clear-search" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-800">Clear</button>
+               </div>
+               <% end %>
+               <datalist id="suggestions"></datalist>
+          </div>
+
+          <!-- Search Results -->
+          <% if params[:q].present? %>
+          <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8">
+               <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Search Results</h2>
+               <% if @items.any? %>
+               <ul class="w-full space-y-4">
+                    <% @items.each do |item| %>
+                    <li class="w-full">
+                         <%= link_to centre_path(item.centre, anchor: "item-#{item.id}"), 
+          class: "block w-full p-4 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-600 transition duration-300 ease-in-out" do %>
+                         <span class="text-lg font-medium text-blue-600 dark:text-blue-300">
+                              <%= item.name %> - Stock: <%= item.stock %> (Centre: <%= item.centre.name %>) Category: <%= item.category&.name %>
+                         </span>
+                         <% end %>
+                    </li>
+                    <% end %>
+               </ul>
+               <% else %>
+               <p class="text-gray-700 dark:text-gray-400 text-center text-lg font-medium py-4">
+                    No matching items found.
+               </p>
+               <% end %>
+          </div>
+          <% end %>
+
+          <!-- Centres List with Toggle Button -->
+          <div class="relative bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
+               <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">All Centres</h2>
+
+                    <!-- Toggle Button (Plus Icon) -->
+                    <button data-modal-target="addCentreModal" data-modal-toggle="addCentreModal" class="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition" aria-label="Add Centre">
+                         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path>
+                         </svg>
+                    </button>
+
+                    <!-- Add Centre Modal -->
+                    <div id="addCentreModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-50">
+                         <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-96">
+                              <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Add a New Centre</h2>
+
+                              <!-- ✅ Display Validation Errors -->
+                              <% if @centre.errors.any? %>
+                              <div class="mb-4 p-3 bg-red-100 dark:bg-red-800 text-red-600 dark:text-red-300 rounded-lg">
+                                   <p class="font-medium">Oops! There were errors:</p>
+                                   <ul class="list-disc pl-5">
+                                        <% @centre.errors.full_messages.each do |msg| %>
+                                        <li><%= msg %></li>
+                                        <% end %>
+                                   </ul>
+                              </div>
+                              <% end %>
+
+                              <!-- Form -->
+                              <%= form_with model: @centre, local: true, class: "mt-4 space-y-4" do |form| %>
+                              <div>
+                                   <%= form.label :name, "Centre Name", class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white" %>
+                                   <%= form.text_field :name, required: true, maxlength: 65, class: "w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" %>
+                              </div>
+
+                              <div class="mt-4 flex gap-2">
+                                   <%= form.submit "Add Centre", class: "px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800" %>
+                                   <button type="button" data-modal-hide="addCentreModal" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-800">
+                                        Cancel
+                                   </button>
+                              </div>
+                              <% end %>
+                         </div>
+                    </div>
+               </div>
+
+               <!-- Centres List -->
+               <ul class="w-full space-y-4">
+                    <% @centres.each do |centre| %>
+                    <li class="w-full">
+                         <%= link_to centre_path(centre), 
+              class: "block w-full p-4 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-600 transition duration-300 ease-in-out" do %>
+                         <span class="text-lg font-medium text-blue-600 dark:text-blue-300">
+                              <%= centre.name %>
+                         </span>
+                         <% end %>
+                    </li>
+                    <% end %>
+               </ul>
+          </div>
+     </div>
+</section>

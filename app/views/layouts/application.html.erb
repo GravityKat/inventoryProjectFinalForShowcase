@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+     <title><%= content_for(:title) || "Mdn Ror" %></title>
+     <meta name="viewport" content="width=device-width,initial-scale=1">
+     <meta name="apple-mobile-web-app-capable" content="yes">
+     <meta name="mobile-web-app-capable" content="yes">
+     <%= csrf_meta_tags %>
+     <%= csp_meta_tag %>
+
+     <%= yield :head %>
+
+     <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
+     <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
+
+     <link rel="icon" href="/icon.png" type="image/png">
+     <link rel="icon" href="/icon.svg" type="image/svg+xml">
+     <link rel="apple-touch-icon" href="/icon.png">
+
+     <%# Includes all stylesheet files in app/assets/stylesheets %>
+     <%= stylesheet_link_tag "tailwind", "inter-font", "data-turbo-track": "reload" %>
+     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+     <%= javascript_importmap_tags %>
+</head>
+
+<body class="bg-baby-blue">
+
+     <!-- Sidebar Toggle Button -->
+     <button id="sidebar-toggle" class="fixed top-4 left-4 z-50 inline-flex items-center p-2 text-sm text-gray-500 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600">
+          <span class="sr-only">Toggle sidebar</span>
+          <svg class="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 17 14">
+               <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 1h15M1 7h15M1 13h15" />
+          </svg>
+     </button>
+
+     <!-- Sidebar -->
+     <aside id="sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen bg-gray-50 dark:bg-gray-800 dark:border-gray-700 shadow-lg transform -translate-x-full transition-transform duration-300 ease-in-out">
+          <div class="h-full px-3 py-4 overflow-y-auto">
+               <a href="#" class="flex items-center space-x-3 rtl:space-x-reverse p-4">
+                    <%= image_tag "SmallerLogo.png", class: "w-full h-auto object-cover pointer-events-none" %> </a>
+               <ul class="space-y-2 font-medium">
+                    <li>
+                         <%= link_to "Home", root_path, class: "block w-full py-2 px-3 text-gray-900 rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white text-center" %>
+                    </li>
+                    <li>
+                         <%= button_to "Log Out", session_path, method: :delete, class: "w-full block py-2 px-3 text-gray-900 rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white text-center" if authenticated? %>
+                    </li>
+               </ul>
+          </div>
+     </aside>
+
+     <script>
+          document.addEventListener("turbo:load", () => {
+               const sidebar = document.getElementById("sidebar");
+               const toggleButton = document.getElementById("sidebar-toggle");
+
+               if (!sidebar || !toggleButton) return; // Prevents errors if elements are missing
+
+               // Remove old event listeners to prevent duplication
+               toggleButton.replaceWith(toggleButton.cloneNode(true));
+               sidebar.replaceWith(sidebar.cloneNode(true));
+
+               // Re-query the elements after replacing them
+               const newSidebar = document.getElementById("sidebar");
+               const newToggleButton = document.getElementById("sidebar-toggle");
+
+               // Sidebar Toggle Functionality
+               newToggleButton.addEventListener("click", (event) => {
+                    event.stopPropagation();
+                    newSidebar.classList.toggle("-translate-x-full");
+                    newToggleButton.style.display = newSidebar.classList.contains("-translate-x-full") ? "inline-flex" : "none";
+               });
+
+               // Close sidebar when clicking outside and show toggle button
+               document.addEventListener("click", (event) => {
+                    if (!newSidebar.contains(event.target) && !newToggleButton.contains(event.target)) {
+                         newSidebar.classList.add("-translate-x-full");
+                         newToggleButton.style.display = "inline-flex";
+                    }
+               });
+
+               // Prevent sidebar from closing when clicking inside it
+               newSidebar.addEventListener("click", (event) => {
+                    event.stopPropagation();
+               });
+          });
+     </script>
+
+     <main>
+          <%= yield %>
+     </main>
+</body>
+
+</html>
+
+<script>
+     document.addEventListener("turbo:load", function() { // ✅ Ensures script runs every page load
+
+          let searchInput = document.querySelector("#search-input");
+          let clearButton = document.querySelector("#clear-search");
+          let searchResults = document.querySelector("#search-results");
+
+          if (!searchInput || !clearButton) return; // ✅ Avoids errors if elements are missing
+
+          // ✅ Live search suggestions (Fixes issue after navigation)
+          searchInput.addEventListener("input", function() {
+               fetch(`/search_suggestions?q=${searchInput.value}`)
+                    .then(response => response.json())
+                    .then(data => {
+                         let suggestions = document.getElementById("suggestions");
+                         if (!suggestions) return;
+                         suggestions.innerHTML = "";
+                         data.forEach(item => {
+                              let option = document.createElement("option");
+                              option.value = item;
+                              suggestions.appendChild(option);
+                         });
+                    });
+          });
+
+          // ✅ Fix: Clear search and reload the page properly
+          clearButton.addEventListener("click", function() {
+               searchInput.value = ""; // Reset input field
+               if (searchResults) searchResults.style.display = "none"; // Hide search results
+               window.location.href = "/centres"; // ✅ Properly reloads the centres page
+          });
+
+     });
+</script>
